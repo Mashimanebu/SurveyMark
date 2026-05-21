@@ -1,7 +1,8 @@
-package com.survey.mark.ui.home
+package com.survey.mark.ui.home.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -64,7 +65,6 @@ fun SearchBar(
         trailingIcon = {
             AnimatedVisibility(
                 visible = searchQuery.isNotBlank(),
-
             ) {
                 IconButton(
                     onClick = {
@@ -79,7 +79,9 @@ fun SearchBar(
             }
         },
 
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .size(42.dp)
     )
 }
 
