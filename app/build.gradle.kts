@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.material3)
     implementation(libs.androidx.room.ktx)
     debugImplementation(libs.androidx.compose.ui.tooling.preview)
 
@@ -55,6 +56,10 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.foundation)
+
+    implementation(libs.androidx.work.runtime.ktx)
+
+    implementation(libs.coil.compose)
 
 
     implementation(libs.hilt.android)
