@@ -1,7 +1,7 @@
 package com.survey.mark.ui.pointListScreen
 
-import com.survey.mark.domain.model.ConditionStatus
-import com.survey.mark.domain.model.ControlPoint
+import com.survey.mark.domain.model.status.ConditionStatus
+import com.survey.mark.domain.model.point.ControlPoint
 
 enum class SortMode { NAME, NUMBER, DISTRICT, PROXIMITY, CONDITION }
 enum class FilterType { ALL, TRIG, TOWN_SURVEY_MARK, REFERENCE_MARK, BENCHMARK }

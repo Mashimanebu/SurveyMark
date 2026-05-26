@@ -1,4 +1,4 @@
-package com.survey.mark.domain.model
+package com.survey.mark.domain.model.point
 
 enum class ControlPointType {
     TRIG,

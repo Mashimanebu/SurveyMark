@@ -1,6 +1,6 @@
 package com.survey.mark.ui.detailScreen
 
-import com.survey.mark.domain.model.ControlPoint
+import com.survey.mark.domain.model.point.ControlPoint
 
 data class ControlPointDetailState(
     val point: ControlPoint? = null,

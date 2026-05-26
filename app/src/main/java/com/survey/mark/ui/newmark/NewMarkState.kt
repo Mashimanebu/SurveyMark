@@ -1,6 +1,6 @@
 package com.survey.mark.ui.newmark
 
-import com.survey.mark.domain.model.ControlPointType
+import com.survey.mark.domain.model.point.ControlPointType
 
 data class NewMarkState(
     val proposedName: String = "",

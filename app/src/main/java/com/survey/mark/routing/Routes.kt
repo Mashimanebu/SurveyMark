@@ -3,7 +3,7 @@ package com.survey.mark.routing
 
 object Routes {
     const val DIRECTORY = "directory"
-    const val DETAIL = "detail/{controlPointId}"
+    const val DETAIL = "detail/{markId}"
     const val FIELD_NAV = "field_nav/{controlPointId}"
     const val REPORT = "report?controlPointId={controlPointId}"
     const val LOG = "log?controlPointId={controlPointId}"

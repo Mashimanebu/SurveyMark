@@ -1,4 +1,4 @@
-package com.survey.mark.domain.model
+package com.survey.mark.domain.model.status
 
 enum class ConditionStatus {
     INTACT,
@@ -7,4 +7,3 @@ enum class ConditionStatus {
     NOT_FOUND,
     UNKNOWN
 }
-

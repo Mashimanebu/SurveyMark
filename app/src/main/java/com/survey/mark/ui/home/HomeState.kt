@@ -1,6 +1,6 @@
 package com.survey.mark.ui.home
 
-import com.survey.mark.domain.model.ControlPoint
+import com.survey.mark.domain.model.point.ControlPoint
 
 data class HomeState(
     val totalPoints: Int = 0,
