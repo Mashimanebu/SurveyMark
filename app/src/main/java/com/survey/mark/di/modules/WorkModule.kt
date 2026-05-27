@@ -2,6 +2,7 @@ package com.survey.mark.di.modules
 
 import android.content.Context
 import androidx.work.WorkManager
+import com.survey.mark.domain.model.sync.SyncScheduler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

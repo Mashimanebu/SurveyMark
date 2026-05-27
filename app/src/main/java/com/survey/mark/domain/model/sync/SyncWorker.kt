@@ -1,4 +1,4 @@
-package com.survey.mark.domain.model
+package com.survey.mark.domain.model.sync
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
@@ -11,10 +11,10 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkerParameters
-import com.survey.mark.domain.repo.ConditionReportRepository
-import com.survey.mark.domain.repo.ControlPointRepository
-import com.survey.mark.domain.repo.NewMarkRepository
-import com.survey.mark.domain.repo.OccupationLogRepository
+import com.survey.mark.domain.repository.ConditionReportRepository
+import com.survey.mark.domain.repository.ControlPointRepository
+import com.survey.mark.domain.repository.NewMarkRepository
+import com.survey.mark.domain.repository.OccupationLogRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timber.log.Timber
@@ -31,17 +31,17 @@ class SyncWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        Timber.d("SyncWorker starting")
+        Timber.Forest.d("SyncWorker starting")
         return try {
             controlPointRepo.syncFromServer()
             conditionReportRepo.syncPending()
             occupationLogRepo.syncPending()
             newMarkRepo.syncPending()
 
-            Timber.d("SyncWorker completed successfully")
+            Timber.Forest.d("SyncWorker completed successfully")
             Result.success()
         } catch (e: Exception) {
-            Timber.e(e, "SyncWorker failed")
+            Timber.Forest.e(e, "SyncWorker failed")
             if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.failure()
         }
     }

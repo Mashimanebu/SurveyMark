@@ -1,4 +1,4 @@
-package com.survey.mark.domain.repo
+package com.survey.mark.domain.repository
 
 import com.survey.mark.data.dao.NewMarkSubmissionDao
 import com.survey.mark.data.mappers.toDomain
