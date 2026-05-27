@@ -4,28 +4,27 @@ import com.survey.mark.domain.model.point.ControlPointType
 import com.survey.mark.domain.model.status.ConditionStatus
 
 data class ControlPoint(
-
+    val id: String,
     val name: String,
-    val refNumber: String,
     val type: ControlPointType,
-    val order: Int,
+    val orderClass: OrderClass,
     val latitude: Double,
     val longitude: Double,
     val ellipsoidalHeight: Double?,
     val orthometricHeight: Double?,
+    val geoidUndulation: Double?,
+    val datumName: String,
+    val epochYear: Int?,
     val description: String,
-    val district: String,
-    val region: String,
+    val accessNotes: String,
+    val regionName: String,
+    val inkhundlaName: String,
     val establishedDate: String?,
     val lastVerifiedDate: String?,
-    val conditionStatus: ConditionStatus,
-    val epoch: String? = null,
-    val uncertaintyMm: Int? = null,
-    val occupationCount: Int = 0,
-    val isSynced: Boolean = true,
-    val distanceMeters: Double? = null,
-    val serverRevision: Long = 0L,
-    val lastModified: Long = System.currentTimeMillis()
+    val condition: ConditionStatus,
+    val photoUri: String?,
+    val isSynced: Boolean,
+    val distanceMeters: Double? = null
 )
 
 fun ControlPointType.displayName(): String = when (this) {

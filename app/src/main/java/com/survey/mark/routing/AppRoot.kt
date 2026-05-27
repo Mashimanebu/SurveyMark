@@ -13,7 +13,7 @@ import com.survey.mark.ui.home.HomeScreen
 import okhttp3.Route
 
 @Composable
-fun SurveyMarkApp() {
+fun SurveyMarkNav() {
     val navController = rememberNavController()
 
     NavHost(
