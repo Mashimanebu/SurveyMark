@@ -13,7 +13,10 @@ enum class FilterChipType(val label: String) {
     ALL("All"),
     TRIGONOMETRIC("Trigonometric"),
     GPS_BASE_STATION("GPS Base Station"),
-    DESTROYED("Destroyed")
+    DESTROYED("Destroyed"),
+    REFERENCE("Reference Mark"),
+    TOWN_SURVEY("Town Survey"),
+    BENCHMARK("Benchmark")
 }
 @Composable
 fun FilterChip(

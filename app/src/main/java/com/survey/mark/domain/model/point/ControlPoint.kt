@@ -32,6 +32,7 @@ fun ControlPointType.displayName(): String = when (this) {
     ControlPointType.TOWN_SURVEY_MARK -> "Town Survey Mark"
     ControlPointType.REFERENCE_MARK -> "Reference Mark"
     ControlPointType.BENCHMARK -> "Benchmark"
+    ControlPointType.GPS_BASE_STATION -> "GPS Base Station"
 }
 
 fun ControlPointType.shortCode(): String = when (this) {
@@ -39,6 +40,7 @@ fun ControlPointType.shortCode(): String = when (this) {
     ControlPointType.TOWN_SURVEY_MARK -> "TSM"
     ControlPointType.REFERENCE_MARK -> "RM"
     ControlPointType.BENCHMARK -> "BM"
+    ControlPointType.GPS_BASE_STATION -> "GPS"
 }
 
 fun ControlPointType.hasHorizontalControl(): Boolean =

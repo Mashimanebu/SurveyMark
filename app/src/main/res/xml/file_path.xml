@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<XML xmlns:android="http://schemas.android.com/apk/res/android">
+    <files-path name="beacon_photos"    path="beacon_photos/" />
+    <files-path name="new_mark_photos"  path="new_mark_photos/" />
+</XML>

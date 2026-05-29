@@ -8,7 +8,9 @@ import com.survey.mark.routing.SurveyMarkApp
 import com.survey.mark.routing.SurveyMarkNav
 import com.survey.mark.ui.home.HomeScreen
 import com.survey.mark.ui.theme.SurveyMarkTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

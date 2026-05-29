@@ -4,5 +4,7 @@ enum class ControlPointType {
     TRIG,
     TOWN_SURVEY_MARK,
     REFERENCE_MARK,
-    BENCHMARK
+    BENCHMARK,
+
+    GPS_BASE_STATION
 }

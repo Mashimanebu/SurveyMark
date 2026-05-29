@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.survey.mark.ui.detailScreen.DetailScreen
 import com.survey.mark.ui.home.HomeScreen
+import dagger.hilt.android.HiltAndroidApp
 import okhttp3.Route
 
 @Composable
@@ -21,16 +22,22 @@ fun SurveyMarkNav() {
         startDestination = Routes.DIRECTORY
     ) {
         composable(Routes.DIRECTORY) {
-            HomeScreen(navController)
+            HomeScreen(
+                navController = navController,
+                onControlPointClick = { markId ->
+                    navController.navigate(Routes.detail(markId))
+                }
+            )
         }
 
         composable(Routes.NEW_MARK) {
             NewMarkScreen(onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.DETAIL,
+        composable(
+            Routes.DETAIL,
             arguments = listOf(
-                navArgument("markId"){
+                navArgument("markId") {
                     type = NavType.StringType
                 }
             )) { backStackEntry ->
@@ -38,7 +45,7 @@ fun SurveyMarkNav() {
 
             DetailScreen(
                 markId = markId,
-                onBack = { navController.popBackStack()},
+                onBack = { navController.popBackStack() },
             )
         }
     }
