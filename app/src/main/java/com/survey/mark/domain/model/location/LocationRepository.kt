@@ -3,24 +3,22 @@ package com.survey.mark.domain.model.location
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.location.LocationRequest
 import android.os.Looper
-import androidx.navigationevent.NavigationEventDispatcher
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.Tasks
 import dagger.hilt.android.qualifiers.ApplicationContext
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class LocationRepository @Inject constructor(
@@ -39,8 +37,8 @@ class LocationRepository @Inject constructor(
     }.build()
 
     private val balancedRequest = LocationRequest.Builder(
-        NavigationEventDispatcher.Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-        5_000L // 5 seconds for background/directory use
+        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+        5_000L
     ).apply {
         setMinUpdateIntervalMillis(2_000L)
     }.build()
@@ -53,7 +51,12 @@ class LocationRepository @Inject constructor(
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
                 val state = loc.toState()
-                Timber.v("Location update: %.6f, %.6f ±%.1fm", loc.latitude, loc.longitude, loc.accuracy)
+                Timber.v(
+                    "Location update: %.6f, %.6f ±%.1fm",
+                    loc.latitude,
+                    loc.longitude,
+                    loc.accuracy
+                )
                 trySend(state)
             }
 
@@ -75,7 +78,11 @@ class LocationRepository @Inject constructor(
         }
     }.distinctUntilChanged { old, new ->
         val dist = FloatArray(1)
-        Location.distanceBetween(old.latitude, old.longitude, new.latitude, new.longitude, dist)
+        Location.distanceBetween(
+            old.latitude, old.longitude,
+            new.latitude, new.longitude,
+            dist
+        )
         dist[0] < 0.5f && Math.abs(old.accuracyMeters - new.accuracyMeters) < 2f
     }
 

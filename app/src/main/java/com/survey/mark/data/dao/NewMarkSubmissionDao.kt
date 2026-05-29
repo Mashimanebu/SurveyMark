@@ -1,5 +1,6 @@
 package com.survey.mark.data.dao
 
+import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -9,6 +10,7 @@ import com.survey.mark.domain.model.ReviewStatus
 import com.survey.mark.domain.model.status.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
+@Dao
 interface NewMarkSubmissionDao {
     @Query("SELECT * FROM new_mark_submissions ORDER BY submittedAt DESC")
     fun observeAll(): Flow<List<NewMarkSubmissionEntity>>
