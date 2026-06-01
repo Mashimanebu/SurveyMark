@@ -1,5 +1,7 @@
 package com.survey.mark.data.entity
 
+import androidx.room.Dao
+import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.survey.mark.domain.model.ObservationMethod
@@ -7,6 +9,7 @@ import com.survey.mark.domain.model.ReviewStatus
 import com.survey.mark.domain.model.point.ControlPointType
 import com.survey.mark.domain.model.status.SyncStatus
 import java.time.LocalDateTime
+
 
 @Entity(tableName = "new_mark_submissions")
 data class NewMarkSubmissionEntity(

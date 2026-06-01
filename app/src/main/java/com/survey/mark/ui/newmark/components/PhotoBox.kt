@@ -1,4 +1,4 @@
-package com.survey.mark.ui.newmark
+package com.survey.mark.ui.newmark.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 @Composable
-private fun PhotoBox(
+fun PhotoBox(
     label: String,
     uri: String?,
     onCapture: () -> Unit,
@@ -114,7 +114,7 @@ private fun PhotoBox(
 
 @Preview(showBackground = true)
 @Composable
-private fun PhotoBoxPreview() {
+fun PhotoBoxPreview() {
 
     MaterialTheme {
 
