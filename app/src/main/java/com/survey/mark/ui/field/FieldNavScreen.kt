@@ -40,8 +40,8 @@ import com.survey.mark.domain.model.bearing.BearingCalculator
 import com.survey.mark.ui.newmark.components.GpsAccuracyChip
 import com.survey.mark.ui.newmark.components.SurveyCard
 import com.survey.mark.ui.newmark.components.SurveyPrimaryButton
-import kotlin.math.sin
 import kotlin.math.cos
+import kotlin.math.sin
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -57,11 +57,8 @@ fun FieldNavScreen(
     val locationPerm = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
     LaunchedEffect(Unit) {
-        if (!locationPerm.status.isGranted) {
-            locationPerm.launchPermissionRequest()
-        }
+        if (!locationPerm.status.isGranted) locationPerm.launchPermissionRequest()
     }
-
 
     DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -83,7 +80,6 @@ fun FieldNavScreen(
                         gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2]
                         hasGravity = true
                     }
-
                     Sensor.TYPE_MAGNETIC_FIELD -> {
                         val alpha = 0.5f
                         geomagnetic[0] = alpha * geomagnetic[0] + (1 - alpha) * event.values[0]
@@ -119,14 +115,15 @@ fun FieldNavScreen(
             sensorManager.registerListener(listener, magnetometer, SensorManager.SENSOR_DELAY_GAME)
         }
 
-        onDispose {
-            sensorManager.unregisterListener(listener)
-        }
+        onDispose { sensorManager.unregisterListener(listener) }
     }
 
-    Column(Modifier
-        .fillMaxSize()
-        .statusBarsPadding()) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+    ) {
+
         Row(
             Modifier
                 .fillMaxWidth()
@@ -145,10 +142,7 @@ fun FieldNavScreen(
                 )
             }
             state.userLocation?.let {
-                GpsAccuracyChip(
-                    it.accuracyMeters,
-                    Modifier.padding(end = 12.dp)
-                )
+                GpsAccuracyChip(it.accuracyMeters, Modifier.padding(end = 12.dp))
             }
         }
 
@@ -189,6 +183,7 @@ fun FieldNavScreen(
 
             CompassRose(
                 bearingDeg = state.bearingDeg,
+                trueBearingDeg = state.trueBearingDeg,
                 isArrived = state.isArrived,
                 modifier = Modifier.size(240.dp)
             )
@@ -206,7 +201,7 @@ fun FieldNavScreen(
                 MetricCard(
                     label = "Bearing",
                     value = if (state.userLocation != null)
-                        BearingCalculator.formatBearing(state.bearingDeg)
+                        BearingCalculator.formatBearing(state.trueBearingDeg)  // true bearing
                     else "—",
                     valueColor = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
@@ -281,9 +276,7 @@ fun FieldNavScreen(
                         Icon(
                             Icons.Default.DirectionsCar, null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .size(18.dp)
-                                .padding(top = 2.dp)
+                            modifier = Modifier.size(18.dp).padding(top = 2.dp)
                         )
                         Column {
                             Text("Access Notes", style = MaterialTheme.typography.labelSmall)
@@ -313,13 +306,14 @@ fun FieldNavScreen(
                         .fillMaxWidth()
                         .height(50.dp),
                     border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outlineVariant)
+                        brush = androidx.compose.ui.graphics.SolidColor(
+                            MaterialTheme.colorScheme.outlineVariant
+                        )
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
-                        Icons.Default.CameraAlt,
-                        null,
+                        Icons.Default.CameraAlt, null,
                         Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -338,7 +332,12 @@ fun FieldNavScreen(
 }
 
 @Composable
-fun CompassRose(bearingDeg: Float, isArrived: Boolean, modifier: Modifier = Modifier) {
+fun CompassRose(
+    bearingDeg: Float,
+    trueBearingDeg: Float,
+    isArrived: Boolean,
+    modifier: Modifier = Modifier
+) {
     val animatedBearing by animateFloatAsState(
         targetValue = bearingDeg,
         animationSpec = spring(dampingRatio = 0.6f, stiffness = 60f),
@@ -360,18 +359,23 @@ fun CompassRose(bearingDeg: Float, isArrived: Boolean, modifier: Modifier = Modi
             .border(2.dp, if (isArrived) tertiaryColor else outlineVariant, CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier
-            .fillMaxSize()
-            .padding(12.dp)) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+        ) {
             val cx = size.width / 2f
             val cy = size.height / 2f
             val radius = size.minDimension / 2f
 
+            // Tick marks
             for (i in 0 until 72) {
                 val angle = Math.toRadians((i * 5).toDouble())
-                val inner = if (i % 18 == 0) radius * 0.7f
-                else if (i % 9 == 0) radius * 0.80f
-                else radius * 0.88f
+                val inner = when {
+                    i % 18 == 0 -> radius * 0.70f
+                    i % 9 == 0  -> radius * 0.80f
+                    else        -> radius * 0.88f
+                }
                 val x1 = cx + (inner * sin(angle)).toFloat()
                 val y1 = cy - (inner * cos(angle)).toFloat()
                 val x2 = cx + (radius * sin(angle)).toFloat()
@@ -444,7 +448,7 @@ fun CompassRose(bearingDeg: Float, isArrived: Boolean, modifier: Modifier = Modi
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "${bearingDeg.toInt()}°",
+                "${trueBearingDeg.toInt()}°",
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp,
@@ -468,7 +472,11 @@ private fun MetricCard(
     valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     SurveyCard(modifier) {
-        Text(label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.fillMaxWidth())
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(Modifier.height(4.dp))
         Text(
             value,

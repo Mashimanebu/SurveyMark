@@ -49,6 +49,13 @@ class NewMarkViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            locationRepository.getLastKnownLocation()?.let { last ->
+                _form.update { it.copy(userLocation = last) }
+                Timber.d("Seeded with last known location: ${last.latitude}, ${last.longitude}")
+            }
+        }
+
+        viewModelScope.launch {
             locationRepository.observeLocation(highAccuracy = true)
                 .catch { Timber.w(it, "Location unavailable in NewMark") }
                 .collect { loc -> _form.update { it.copy(userLocation = loc) } }
@@ -66,6 +73,7 @@ class NewMarkViewModel @Inject constructor(
     fun setMarkType(t: ControlPointType) = _form.update {
         it.copy(markType = t, refNumber = generateRefNumber(t))
     }
+
     fun setLatitude(s: String) = _form.update { it.copy(latitudeStr = s) }
     fun setLongitude(s: String) = _form.update { it.copy(longitudeStr = s) }
     fun setHeight(s: String) = _form.update { it.copy(heightStr = s) }

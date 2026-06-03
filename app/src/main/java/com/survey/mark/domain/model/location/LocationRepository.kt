@@ -15,7 +15,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,7 +51,7 @@ class LocationRepository @Inject constructor(
                 val loc = result.lastLocation ?: return
                 val state = loc.toState()
                 Timber.v(
-                    "Location update: %.6f, %.6f ±%.1fm",
+                    "Repo location: %.6f, %.6f ±%.1fm",
                     loc.latitude,
                     loc.longitude,
                     loc.accuracy
@@ -76,14 +75,6 @@ class LocationRepository @Inject constructor(
             client.removeLocationUpdates(callback)
             Timber.d("Stopped location updates")
         }
-    }.distinctUntilChanged { old, new ->
-        val dist = FloatArray(1)
-        Location.distanceBetween(
-            old.latitude, old.longitude,
-            new.latitude, new.longitude,
-            dist
-        )
-        dist[0] < 0.5f && Math.abs(old.accuracyMeters - new.accuracyMeters) < 2f
     }
 
     @SuppressLint("MissingPermission")
