@@ -12,19 +12,18 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ControlPointDao {
+
     @Query("SELECT * FROM control_points ORDER BY name ASC")
     fun observeAll(): Flow<List<ControlPointEntity>>
 
-    @Query(
-        """
+    @Query("""
         SELECT * FROM control_points
-        WHERE name LIKE '%' || :query || '%'
-           OR id LIKE '%' || :query || '%'
+        WHERE name         LIKE '%' || :query || '%'
+           OR id           LIKE '%' || :query || '%'
            OR districtName LIKE '%' || :query || '%'
            OR tinkhundlaName LIKE '%' || :query || '%'
         ORDER BY name ASC
-    """
-    )
+    """)
     fun observeBySearch(query: String): Flow<List<ControlPointEntity>>
 
     @Query("SELECT * FROM control_points WHERE type = :type ORDER BY name ASC")
@@ -46,7 +45,7 @@ interface ControlPointDao {
     suspend fun countByCondition(condition: ConditionStatus): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(entity: ControlPointEntity)
+    suspend fun upsert(entity: ControlPointEntity): Long   // ← now returns Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(entities: List<ControlPointEntity>)

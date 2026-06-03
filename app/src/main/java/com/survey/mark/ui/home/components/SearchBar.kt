@@ -2,7 +2,7 @@ package com.survey.mark.ui.home.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -81,7 +81,7 @@ fun SearchBar(
 
         modifier = modifier
             .fillMaxWidth()
-            .size(42.dp)
+            .heightIn(min = 42.dp, max = 56.dp)
     )
 }
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1012533688781",
+    "project_id": "surveymark-887b4",
+    "storage_bucket": "surveymark-887b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012533688781:android:2e2cdac85c29fac3f56c84",
+        "android_client_info": {
+          "package_name": "com.survey.mark"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0fBd9NlxSCeSgb6CiOAE_DJPHvayMgIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

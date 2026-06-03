@@ -1,32 +1,28 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.survey.mark"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    namespace  = "com.survey.mark"
+    compileSdk = 36                    // ← just an integer, no block
 
     defaultConfig {
         applicationId = "com.survey.mark"
-        minSdk = 26
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
-
+        minSdk        = 26
+        targetSdk     = 36
+        versionCode   = 1
+        versionName   = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled   = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -36,9 +32,6 @@ android {
         }
         debug {
             isDebuggable = true
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-
             buildConfigField("String", "BASE_URL", "\"https://api.surveymark.gov.sz/v1/\"")
         }
     }
@@ -47,8 +40,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
-        compose = true
+        compose     = true
         buildConfig = true
     }
 }
@@ -103,6 +97,8 @@ dependencies {
 
     implementation(libs.coroutines.android)
     implementation(libs.coroutines.play.services)
+
+    implementation(platform(libs.firebase.bom))
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

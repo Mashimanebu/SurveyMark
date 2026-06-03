@@ -15,6 +15,12 @@ import com.survey.mark.ui.report.ConditionReportScreen
 fun SurveyMarkNav() {
     val navController = rememberNavController()
 
+    fun safeBack() {
+        if (navController.previousBackStackEntry != null) {
+            navController.popBackStack()
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Routes.DIRECTORY
@@ -30,8 +36,8 @@ fun SurveyMarkNav() {
 
         composable(Routes.NEW_MARK) {
             NewMarkScreen(
-                onBack = { navController.popBackStack() },
-                onSubmitSuccess = { navController.popBackStack() }
+                onBack = { safeBack() },
+                onSubmitSuccess = { safeBack() }
             )
         }
 
@@ -39,7 +45,7 @@ fun SurveyMarkNav() {
             val markId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
             ControlPointDetailScreen(
                 markId = markId,
-                onBack = { navController.popBackStack() },
+                onBack = { safeBack() },
                 onNavigateClick = { navController.navigate(Routes.fieldNav(markId)) },
                 onReportClick = { navController.navigate(Routes.report(markId)) },
                 onLogClick = { navController.navigate(Routes.log(markId)) },
@@ -50,8 +56,8 @@ fun SurveyMarkNav() {
             val cpId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
             ConditionReportScreen(
                 preselectedControlPointId = cpId,
-                onBack = { navController.popBackStack() },
-                onSubmitSuccess = { navController.popBackStack() }
+                onBack = { safeBack() },
+                onSubmitSuccess = { safeBack() }
             )
         }
 
@@ -59,7 +65,7 @@ fun SurveyMarkNav() {
             val cpId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
             OccupationLogScreen(
                 preselectedControlPointId = cpId,
-                onBack = { navController.popBackStack() }
+                onBack = { safeBack() }
             )
         }
 
@@ -67,7 +73,7 @@ fun SurveyMarkNav() {
             val cpId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
             FieldNavScreen(
                 controlPointId = cpId,
-                onBack = { navController.popBackStack() },
+                onBack = { safeBack() },
                 onArrived = { navController.navigate(Routes.report(cpId)) }
             )
         }

@@ -43,7 +43,7 @@ object BearingCalculator {
     }
 
     fun isWithinEswatini(lat: Double, lng: Double): Boolean {
-        return lat in -27.32..-25.71 && lng in 30.79..32.14
+        return lat in -27.35..-25.70 && lng in 30.78..32.15
     }
 
     fun isArrived(distanceMeters: Double, thresholdMeters: Double = 20.0): Boolean =

@@ -171,7 +171,6 @@ fun ConditionReportScreen(
                     )
                 }
 
-                // Destroyed alert
                 if (form.condition == ConditionStatus.DESTROYED) {
                     Spacer(Modifier.height(8.dp))
                     val errorColor = MaterialTheme.colorScheme.error
@@ -269,14 +268,14 @@ fun ConditionReportScreen(
                     value = form.reporterName,
                     onValueChange = vm::setReporterName,
                     label = "Full Name",
-                    placeholder = "e.g. Nhlanhla Dlamini"
+                    placeholder = "e.g. Sihlangu Maphanga"
                 )
                 Spacer(Modifier.height(8.dp))
                 SurveyTextField(
                     value = form.reporterLicenceNo,
                     onValueChange = vm::setLicenceNo,
                     label = "Licence Number *",
-                    placeholder = "e.g. SZ-LS-0042"
+                    placeholder = "e.g. SD-007"
                 )
             }
 

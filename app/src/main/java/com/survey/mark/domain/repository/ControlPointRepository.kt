@@ -3,6 +3,7 @@ package com.survey.mark.domain.repository
 import com.survey.mark.data.dao.ControlPointDao
 import com.survey.mark.data.entity.ControlPointEntity
 import com.survey.mark.data.mappers.toDomain
+import com.survey.mark.data.mappers.toEntity
 import com.survey.mark.di.SurveyMarkApi
 import com.survey.mark.domain.model.bearing.BearingCalculator
 import com.survey.mark.domain.model.point.ControlPoint
@@ -36,36 +37,69 @@ class ControlPointRepository @Inject constructor(
     fun observeById(id: String): Flow<ControlPoint?> =
         dao.observeById(id).map { it?.toDomain() }
 
-    fun observeAllSortedByDistance(userLat: Double, userLng: Double): Flow<List<ControlPoint>> =
+    fun observeAllSortedByDistance(
+        userLat: Double,
+        userLng: Double
+    ): Flow<List<ControlPoint>> =
         dao.observeAll().map { list ->
             list.map { entity ->
                 val dist = BearingCalculator.distanceMeters(
-                    userLat, userLng, entity.latitude, entity.longitude
+                    userLat, userLng,
+                    entity.latitude, entity.longitude
                 )
                 entity.toDomain(distanceMeters = dist)
             }.sortedBy { it.distanceMeters }
         }
+
+
+    suspend fun getById(id: String): ControlPoint? =
+        dao.getById(id)?.toDomain()
+
+
+    suspend fun upsert(controlPoint: ControlPoint): Long =
+        dao.upsert(controlPoint.toEntity())
+
+    suspend fun upsertAll(entities: List<ControlPoint>) =
+        dao.upsertAll(entities.map { it.toEntity() })
+
+    suspend fun countByCondition(condition: ConditionStatus) =
+        dao.countByCondition(condition)
+
+
+
+    suspend fun seedIfEmpty() {
+        if (dao.count() == 0) {
+            Timber.d("Seeding ${EswatiniSeedData.points.size} control points")
+            dao.upsertAll(EswatiniSeedData.points)
+        }
+    }
 
     suspend fun syncFromServer(): Result<Int> = runCatching {
         val response = api.getControlPoints()
         if (response.isSuccessful) {
             val body = response.body() ?: return@runCatching 0
             val entities = body.items.map { dto ->
-                ControlPointEntity(
-                    id = dto.id, name = dto.name,
-                    type = ControlPointType.valueOf(dto.type),
-                    orderClass = OrderClass.valueOf(dto.orderClass),
-                    latitude = dto.latitude, longitude = dto.longitude,
+                com.survey.mark.data.entity.ControlPointEntity(
+                    id               = dto.id,
+                    name             = dto.name,
+                    type             = ControlPointType.valueOf(dto.type),
+                    orderClass       = OrderClass.valueOf(dto.orderClass),
+                    latitude         = dto.latitude,
+                    longitude        = dto.longitude,
                     ellipsoidalHeight = dto.ellipsoidalHeight,
                     orthometricHeight = dto.orthometricHeight,
-                    geoidUndulation = dto.geoidUndulation,
-                    datumName = dto.datumName, epochYear = dto.epochYear,
-                    description = dto.description, accessNotes = dto.accessNotes,
-                    districtName = dto.regionName, tinkhundlaName = dto.inkhundlaName,
-                    establishedDate = dto.establishedDate,
+                    geoidUndulation  = dto.geoidUndulation,
+                    datumName        = dto.datumName,
+                    epochYear        = dto.epochYear,
+                    description      = dto.description,
+                    accessNotes      = dto.accessNotes,
+                    districtName     = dto.regionName,
+                    tinkhundlaName   = dto.inkhundlaName,
+                    establishedDate  = dto.establishedDate,
                     lastVerifiedDate = dto.lastVerifiedDate,
-                    condition = ConditionStatus.valueOf(dto.condition),
-                    photoUri = dto.photoUrl, isSynced = true
+                    condition        = ConditionStatus.valueOf(dto.condition),
+                    photoUri         = dto.photoUrl,
+                    isSynced         = true
                 )
             }
             dao.upsertAll(entities)
@@ -76,16 +110,8 @@ class ControlPointRepository @Inject constructor(
             0
         }
     }
-
-    suspend fun seedIfEmpty() {
-        if (dao.count() == 0) {
-            Timber.d("Seeding ${EswatiniSeedData.points.size} control points")
-            dao.upsertAll(EswatiniSeedData.points)
-        }
-    }
-
-    suspend fun countByCondition(condition: ConditionStatus) = dao.countByCondition(condition)
 }
+
 
 private object EswatiniSeedData {
     val points: List<ControlPointEntity> = listOf(

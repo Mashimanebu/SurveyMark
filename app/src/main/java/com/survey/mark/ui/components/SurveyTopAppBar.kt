@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.survey.mark.ui.newmark.components.GpsAccuracyChip
 import kotlinx.coroutines.launch
 
 
@@ -56,8 +57,8 @@ fun SurveyTopAppBar(
                         )
                         Spacer(modifier = Modifier.weight(1.0f))
 
-                        locationAccuracy?.let {
-                            TODO()
+                        locationAccuracy?.let { accuracy ->
+                            GpsAccuracyChip(accuracyMeters = accuracy)
                         }
                     }
                 }
