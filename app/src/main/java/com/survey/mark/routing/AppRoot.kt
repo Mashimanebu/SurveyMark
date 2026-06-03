@@ -1,9 +1,15 @@
 package com.survey.mark.routing
 
-import androidx.compose.runtime.Composable
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.*
+import com.survey.mark.auth.domain.AuthState
+import com.survey.mark.auth.domain.UserRole
+import com.survey.mark.auth.ui.AdminDashboardScreen
+import com.survey.mark.auth.ui.AuthViewModel
+import com.survey.mark.auth.ui.LoginScreen
+import com.survey.mark.auth.ui.PendingApprovalScreen
+import com.survey.mark.auth.ui.SignUpScreen
 import com.survey.mark.ui.detailScreen.ControlPointDetailScreen
 import com.survey.mark.ui.field.FieldNavScreen
 import com.survey.mark.ui.home.HomeScreen
@@ -12,8 +18,11 @@ import com.survey.mark.ui.newmark.NewMarkScreen
 import com.survey.mark.ui.report.ConditionReportScreen
 
 @Composable
-fun SurveyMarkNav() {
+fun SurveyMarkNav(
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
+    val authState by authViewModel.authState.collectAsState()
 
     fun safeBack() {
         if (navController.previousBackStackEntry != null) {
@@ -23,8 +32,96 @@ fun SurveyMarkNav() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.DIRECTORY
+        startDestination = Routes.SPLASH
     ) {
+
+        composable(Routes.SPLASH) {
+            LaunchedEffect(authState) {
+                when (authState) {
+
+                    is AuthState.Unauthenticated -> {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    }
+
+                    is AuthState.PendingApproval -> {
+                        navController.navigate(Routes.PENDING) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    }
+
+                    is AuthState.Authenticated -> {
+                        val user = (authState as AuthState.Authenticated).user
+
+                        when (user.role) {
+
+                            UserRole.SURVEYOR_GENERAL -> {
+                                navController.navigate(Routes.ADMIN) {
+                                    popUpTo(Routes.SPLASH) { inclusive = true }
+                                }
+                            }
+
+                            UserRole.SURVEYOR -> {
+                                navController.navigate(Routes.DIRECTORY) {
+                                    popUpTo(Routes.SPLASH) { inclusive = true }
+                                }
+                            }
+
+                            else -> {
+                                navController.navigate(Routes.LOGIN) {
+                                    popUpTo(Routes.SPLASH) { inclusive = true }
+                                }
+                            }
+                        }
+                    }
+
+                    else -> Unit
+                }
+            }
+        }
+
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onNavigateToSignUp = {
+                    navController.navigate(Routes.SIGNUP)
+                }
+            )
+        }
+
+        composable(Routes.SIGNUP) {
+            SignUpScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                onRegistrationDone = {
+                    navController.navigate(Routes.PENDING) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Routes.PENDING) {
+            PendingApprovalScreen(
+                onSignOut = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Routes.ADMIN) {
+            AdminDashboardScreen(
+                onSignOut = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.DIRECTORY) {
             HomeScreen(
                 navController = navController,
@@ -42,18 +139,22 @@ fun SurveyMarkNav() {
         }
 
         composable(Routes.DETAIL) { backStackEntry ->
-            val markId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
+            val markId = backStackEntry.arguments?.getString("controlPointId")
+                ?: return@composable
+
             ControlPointDetailScreen(
                 markId = markId,
                 onBack = { safeBack() },
                 onNavigateClick = { navController.navigate(Routes.fieldNav(markId)) },
                 onReportClick = { navController.navigate(Routes.report(markId)) },
-                onLogClick = { navController.navigate(Routes.log(markId)) },
+                onLogClick = { navController.navigate(Routes.log(markId)) }
             )
         }
 
         composable(Routes.REPORT) { backStackEntry ->
-            val cpId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
+            val cpId = backStackEntry.arguments?.getString("controlPointId")
+                ?: return@composable
+
             ConditionReportScreen(
                 preselectedControlPointId = cpId,
                 onBack = { safeBack() },
@@ -62,7 +163,9 @@ fun SurveyMarkNav() {
         }
 
         composable(Routes.LOG) { backStackEntry ->
-            val cpId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
+            val cpId = backStackEntry.arguments?.getString("controlPointId")
+                ?: return@composable
+
             OccupationLogScreen(
                 preselectedControlPointId = cpId,
                 onBack = { safeBack() }
@@ -70,7 +173,9 @@ fun SurveyMarkNav() {
         }
 
         composable(Routes.FIELD_NAV) { backStackEntry ->
-            val cpId = backStackEntry.arguments?.getString("controlPointId") ?: return@composable
+            val cpId = backStackEntry.arguments?.getString("controlPointId")
+                ?: return@composable
+
             FieldNavScreen(
                 controlPointId = cpId,
                 onBack = { safeBack() },

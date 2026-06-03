@@ -71,7 +71,6 @@ dependencies {
     ksp(libs.hilt.work.compiler)
     ksp(libs.hilt.compiler)
 
-
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
@@ -99,6 +98,8 @@ dependencies {
     implementation(libs.coroutines.play.services)
 
     implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
