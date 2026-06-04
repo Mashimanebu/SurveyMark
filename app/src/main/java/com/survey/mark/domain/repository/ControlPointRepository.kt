@@ -66,7 +66,15 @@ class ControlPointRepository @Inject constructor(
     suspend fun countByCondition(condition: ConditionStatus) =
         dao.countByCondition(condition)
 
+    suspend fun markSynced(id: String) {
+        dao.markSynced(id)
+        Timber.d("Control point marked as synced: $id")
+    }
 
+    suspend fun delete(id: String) {
+        dao.deleteById(id)
+        Timber.d("Control point deleted: $id")
+    }
 
     suspend fun seedIfEmpty() {
         if (dao.count() == 0) {

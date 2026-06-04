@@ -56,4 +56,10 @@ interface ControlPointDao {
     @Delete
     suspend fun delete(entity: ControlPointEntity)
 
+    @Query("UPDATE control_points SET isSynced = 1 WHERE id = :id")
+    suspend fun markSynced(id: String)
+
+    @Query("DELETE FROM control_points WHERE id = :id")
+    suspend fun deleteById(id: String)
+
 }

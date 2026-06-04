@@ -25,6 +25,9 @@ import androidx.lifecycle.viewModelScope
 import com.survey.mark.auth.domain.AccountStatus
 import com.survey.mark.auth.domain.AuthRepository
 import com.survey.mark.auth.domain.SurveyUser
+import com.survey.mark.domain.model.point.ControlPoint
+import com.survey.mark.domain.model.status.ConditionStatus
+import com.survey.mark.domain.repository.ControlPointRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,11 +35,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class AdminViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val controlPointRepository: ControlPointRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SurveyorGeneralState())
@@ -46,6 +51,7 @@ class AdminViewModel @Inject constructor(
         loadCurrentUser()
         loadPendingUsers()
         loadAllUsers()
+        observeControlPoints()
     }
 
     private fun loadCurrentUser() {
@@ -54,12 +60,55 @@ class AdminViewModel @Inject constructor(
         }
     }
 
+    private fun observeControlPoints() {
+        viewModelScope.launch {
+            controlPointRepository.observeAll().collect { points ->
+                _state.update {
+                    it.copy(
+                        allPoints = points,
+                        destroyedPoints = points.filter { p ->
+                            p.condition == ConditionStatus.DESTROYED
+                        },
+                        newPoints = points.filter { p -> !p.isSynced },
+                        pendingPoints = points.filter { p -> !p.isSynced }
+                    )
+                }
+            }
+        }
+    }
+
+    fun approveControlPoint(pointId: String) {
+        viewModelScope.launch {
+            runCatching {
+                controlPointRepository.markSynced(pointId)
+            }.onSuccess {
+                Timber.d("Control point approved: $pointId")
+            }.onFailure { e ->
+                _state.update { it.copy(errorMessage = e.message ?: "Failed to approve point") }
+            }
+        }
+    }
+
+    fun rejectControlPoint(pointId: String) {
+        viewModelScope.launch {
+            runCatching {
+                controlPointRepository.delete(pointId)
+            }.onSuccess {
+                Timber.d("Control point rejected and deleted: $pointId")
+            }.onFailure { e ->
+                _state.update { it.copy(errorMessage = e.message ?: "Failed to reject point") }
+            }
+        }
+    }
+
     fun loadPendingUsers() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            authRepository.getPendingUsers().onSuccess { users ->
+            authRepository.getPendingUsers()
+                .onSuccess { users ->
                     _state.update { it.copy(pendingUsers = users, isLoading = false) }
-                }.onFailure { error ->
+                }
+                .onFailure { error ->
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -73,7 +122,8 @@ class AdminViewModel @Inject constructor(
     fun loadAllUsers() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            authRepository.getAllUsers().onSuccess { users ->
+            authRepository.getAllUsers()
+                .onSuccess { users ->
                     _state.update {
                         it.copy(
                             allUsers = users,
@@ -83,7 +133,8 @@ class AdminViewModel @Inject constructor(
                             isLoading = false
                         )
                     }
-                }.onFailure { error ->
+                }
+                .onFailure { error ->
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -101,48 +152,40 @@ class AdminViewModel @Inject constructor(
 
     fun approveUser(uid: String) {
         viewModelScope.launch {
-            authRepository.approveUser(uid).onSuccess { refresh() }.onFailure { e ->
-                    _state.update {
-                        it.copy(
-                            errorMessage = e.message ?: "Failed to approve user"
-                        )
-                    }
+            authRepository.approveUser(uid)
+                .onSuccess { refresh() }
+                .onFailure { e ->
+                    _state.update { it.copy(errorMessage = e.message ?: "Failed to approve user") }
                 }
         }
     }
 
     fun rejectUser(uid: String, reason: String = "Rejected by admin") {
         viewModelScope.launch {
-            authRepository.rejectUser(uid, reason).onSuccess { refresh() }.onFailure { e ->
-                    _state.update {
-                        it.copy(
-                            errorMessage = e.message ?: "Failed to reject user"
-                        )
-                    }
+            authRepository.rejectUser(uid, reason)
+                .onSuccess { refresh() }
+                .onFailure { e ->
+                    _state.update { it.copy(errorMessage = e.message ?: "Failed to reject user") }
                 }
         }
     }
 
     fun suspendUser(uid: String, reason: String = "Suspended by admin") {
         viewModelScope.launch {
-            authRepository.suspendUser(uid, reason).onSuccess { loadAllUsers() }.onFailure { e ->
-                    _state.update {
-                        it.copy(
-                            errorMessage = e.message ?: "Failed to suspend user"
-                        )
-                    }
+            authRepository.suspendUser(uid, reason)
+                .onSuccess { loadAllUsers() }
+                .onFailure { e ->
+                    _state.update { it.copy(errorMessage = e.message ?: "Failed to suspend user") }
                 }
         }
     }
 
     fun restoreUser(uid: String) {
         viewModelScope.launch {
-            authRepository.approveUser(uid).onSuccess { loadAllUsers() }.onFailure { e ->
-                    _state.update {
-                        it.copy(
-                            errorMessage = e.message ?: "Failed to restore user"
-                        )
-                    }
+            authRepository.approveUser(uid)
+                .onSuccess { loadAllUsers() }
+                .onFailure { e ->
+                    _state.update { it.copy(errorMessage = e.message ?: "Failed to restore user") }
                 }
         }
     }
@@ -156,10 +199,12 @@ class AdminViewModel @Inject constructor(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
-    onSignOut: () -> Unit, vm: AdminViewModel = hiltViewModel()
+    onSignOut: () -> Unit,
+    vm: AdminViewModel = hiltViewModel()
 ) {
     val state by vm.state.collectAsState()
     var activeTab by remember { mutableStateOf(AdminTab.OVERVIEW) }
@@ -173,88 +218,96 @@ fun AdminDashboardScreen(
 
     Scaffold(
         topBar = {
-        TopAppBar(
-            title = {
-            Column {
-                Text(
-                    text = when (activeTab) {
-                        AdminTab.OVERVIEW -> "Overview"
-                        AdminTab.ALL_USERS -> "All users"
-                        AdminTab.PENDING -> "Pending approvals"
-                        AdminTab.CONTROL_POINTS -> "Control points"
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = when (activeTab) {
+                                AdminTab.OVERVIEW -> "Overview"
+                                AdminTab.ALL_USERS -> "All users"
+                                AdminTab.PENDING -> "Pending approvals"
+                                AdminTab.CONTROL_POINTS -> "Control points"
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = state.currentUser?.displayName ?: "Surveyor General",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(.5f)
+                        )
+                    }
+                },
+                actions = {
+                    if (state.pendingUsers.isNotEmpty()) {
+                        Badge(containerColor = MaterialTheme.colorScheme.error) {
+                            Text(
+                                "${state.pendingUsers.size}",
+                                color = MaterialTheme.colorScheme.onError
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    IconButton(onClick = { vm.signOut(); onSignOut() }) {
+                        Icon(
+                            Icons.Outlined.Logout,
+                            contentDescription = "Sign out",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
-                Text(
-                    text = state.currentUser?.displayName ?: "Surveyor General",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(.5f)
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = activeTab == AdminTab.OVERVIEW,
+                    onClick = { activeTab = AdminTab.OVERVIEW },
+                    icon = { Icon(Icons.Outlined.Dashboard, null) },
+                    label = { Text("Overview", style = MaterialTheme.typography.labelSmall) }
                 )
-            }
-        }, actions = {
-
-            if (state.pendingUsers.isNotEmpty()) {
-                Badge(containerColor = MaterialTheme.colorScheme.error) {
-                    Text(
-                        "${state.pendingUsers.size}",
-                        color = MaterialTheme.colorScheme.onError
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-            }
-            IconButton(onClick = { vm.signOut(); onSignOut() }) {
-                Icon(
-                    Icons.Outlined.Logout,
-                    contentDescription = "Sign out",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
-        }, colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-        )
-    }, bottomBar = {
-        NavigationBar {
-            NavigationBarItem(
-                selected = activeTab == AdminTab.OVERVIEW,
-                onClick = { activeTab = AdminTab.OVERVIEW },
-                icon = { Icon(Icons.Outlined.Dashboard, null) },
-                label = { Text("Overview", style = MaterialTheme.typography.labelSmall) })
-            NavigationBarItem(
-                selected = activeTab == AdminTab.PENDING,
-                onClick = { activeTab = AdminTab.PENDING },
-                icon = {
-                    BadgedBox(
-                        badge = {
+                NavigationBarItem(
+                    selected = activeTab == AdminTab.PENDING,
+                    onClick = { activeTab = AdminTab.PENDING },
+                    icon = {
+                        BadgedBox(badge = {
                             if (state.pendingUsers.isNotEmpty()) {
                                 Badge { Text("${state.pendingUsers.size}") }
                             }
-                        }) {
-                        Icon(Icons.Outlined.Schedule, null)
-                    }
-                },
-                label = { Text("Pending", style = MaterialTheme.typography.labelSmall) })
-            NavigationBarItem(
-                selected = activeTab == AdminTab.ALL_USERS,
-                onClick = { activeTab = AdminTab.ALL_USERS },
-                icon = { Icon(Icons.Outlined.Group, null) },
-                label = { Text("Users", style = MaterialTheme.typography.labelSmall) })
-            NavigationBarItem(
-                selected = activeTab == AdminTab.CONTROL_POINTS,
-                onClick = { activeTab = AdminTab.CONTROL_POINTS },
-                icon = { Icon(Icons.Outlined.PinDrop, null) },
-                label = { Text("Points", style = MaterialTheme.typography.labelSmall) })
-        }
-    }, containerColor = MaterialTheme.colorScheme.background
+                        }) { Icon(Icons.Outlined.Schedule, null) }
+                    },
+                    label = { Text("Pending", style = MaterialTheme.typography.labelSmall) }
+                )
+                NavigationBarItem(
+                    selected = activeTab == AdminTab.ALL_USERS,
+                    onClick = { activeTab = AdminTab.ALL_USERS },
+                    icon = { Icon(Icons.Outlined.Group, null) },
+                    label = { Text("Users", style = MaterialTheme.typography.labelSmall) }
+                )
+                NavigationBarItem(
+                    selected = activeTab == AdminTab.CONTROL_POINTS,
+                    onClick = { activeTab = AdminTab.CONTROL_POINTS },
+                    icon = {
+                        BadgedBox(badge = {
+                            if (state.pendingPoints.isNotEmpty()) {
+                                Badge { Text("${state.pendingPoints.size}") }
+                            }
+                        }) { Icon(Icons.Outlined.PinDrop, null) }
+                    },
+                    label = { Text("Points", style = MaterialTheme.typography.labelSmall) }
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-
             state.errorMessage?.let { msg ->
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -265,8 +318,7 @@ fun AdminDashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Outlined.ErrorOutline,
-                            null,
+                            Icons.Outlined.ErrorOutline, null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(16.dp)
                         )
@@ -288,7 +340,7 @@ fun AdminDashboardScreen(
                 AdminTab.OVERVIEW -> OverviewTab(state, vm)
                 AdminTab.PENDING -> PendingTab(state, vm)
                 AdminTab.ALL_USERS -> AllUsersTab(state, vm)
-                AdminTab.CONTROL_POINTS -> ControlPointsTab()
+                AdminTab.CONTROL_POINTS -> ControlPointsTab(state, vm)
             }
         }
     }
@@ -301,7 +353,6 @@ private fun OverviewTab(state: SurveyorGeneralState, vm: AdminViewModel) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -332,12 +383,24 @@ private fun OverviewTab(state: SurveyorGeneralState, vm: AdminViewModel) {
                         Modifier.weight(1f)
                     )
                 }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatCard(
+                        "Total points",
+                        state.allPoints.size.toString(),
+                        MaterialTheme.colorScheme.primary,
+                        Modifier.weight(1f)
+                    )
+                    StatCard(
+                        "Destroyed",
+                        state.destroyedPoints.size.toString(),
+                        MaterialTheme.colorScheme.error,
+                        Modifier.weight(1f)
+                    )
+                }
             }
         }
 
-        item {
-            SectionLabel("Pending approvals", state.pendingUsers.size)
-        }
+        item { SectionLabel("Pending approvals", state.pendingUsers.size) }
 
         if (state.pendingUsers.isEmpty()) {
             item { EmptyState("No pending users") }
@@ -349,7 +412,8 @@ private fun OverviewTab(state: SurveyorGeneralState, vm: AdminViewModel) {
                             onClick = { vm.approveUser(user.uid) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = Color(0xFFEAF3DE), contentColor = Color(0xFF27500A)
+                                containerColor = Color(0xFFEAF3DE),
+                                contentColor = Color(0xFF27500A)
                             )
                         ) {
                             Icon(Icons.Outlined.Check, null, Modifier.size(16.dp))
@@ -359,9 +423,7 @@ private fun OverviewTab(state: SurveyorGeneralState, vm: AdminViewModel) {
                         OutlinedButton(
                             onClick = { vm.rejectUser(user.uid) },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Outlined.Close, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
@@ -393,7 +455,8 @@ private fun PendingTab(state: SurveyorGeneralState, vm: AdminViewModel) {
                             onClick = { vm.approveUser(user.uid) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = Color(0xFFEAF3DE), contentColor = Color(0xFF27500A)
+                                containerColor = Color(0xFFEAF3DE),
+                                contentColor = Color(0xFF27500A)
                             )
                         ) {
                             Icon(Icons.Outlined.Check, null, Modifier.size(16.dp))
@@ -403,9 +466,7 @@ private fun PendingTab(state: SurveyorGeneralState, vm: AdminViewModel) {
                         OutlinedButton(
                             onClick = { vm.rejectUser(user.uid) },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Outlined.Close, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
@@ -472,7 +533,9 @@ private fun AllUsersTab(state: SurveyorGeneralState, vm: AdminViewModel) {
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(
-                                        Icons.Outlined.RestoreFromTrash, null, Modifier.size(16.dp)
+                                        Icons.Outlined.RestoreFromTrash,
+                                        null,
+                                        Modifier.size(16.dp)
                                     )
                                     Spacer(Modifier.width(4.dp))
                                     Text("Restore account")
@@ -489,38 +552,185 @@ private fun AllUsersTab(state: SurveyorGeneralState, vm: AdminViewModel) {
 }
 
 @Composable
-private fun ControlPointsTab() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+private fun ControlPointsTab(state: SurveyorGeneralState, vm: AdminViewModel) {
+    var selectedFilter by remember { mutableStateOf(PointFilter.PENDING) }
+
+    val filteredPoints = when (selectedFilter) {
+        PointFilter.PENDING -> state.pendingPoints
+        PointFilter.DESTROYED -> state.destroyedPoints
+        PointFilter.ALL -> state.allPoints
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                Icons.Outlined.PinDrop,
-                null,
-                Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurface.copy(.25f)
-            )
-            Text(
-                "Control points coming soon",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(.4f)
-            )
-            Text(
-                "Add a ControlPointRepository and wire it into AdminViewModel to populate this tab.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(.3f),
-                textAlign = TextAlign.Center
-            )
+            PointFilter.entries.forEach { filter ->
+                val count = when (filter) {
+                    PointFilter.PENDING -> state.pendingPoints.size
+                    PointFilter.DESTROYED -> state.destroyedPoints.size
+                    PointFilter.ALL -> state.allPoints.size
+                }
+                FilterChip(
+                    selected = selectedFilter == filter,
+                    onClick = { selectedFilter = filter },
+                    label = {
+                        Text(
+                            "${filter.label} ($count)",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                )
+            }
+        }
+
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (filteredPoints.isEmpty()) {
+                item { EmptyState("No ${selectedFilter.label.lowercase()} points") }
+            } else {
+                items(filteredPoints, key = { it.id }) { point ->
+                    ControlPointCard(point = point, vm = vm, showActions = !point.isSynced)
+                }
+            }
         }
     }
 }
 
+
 @Composable
-private fun UserCard(
-    user: SurveyUser, actions: @Composable () -> Unit
+private fun ControlPointCard(
+    point: ControlPoint,
+    vm: AdminViewModel,
+    showActions: Boolean
 ) {
+    val conditionColor = when (point.condition) {
+        ConditionStatus.INTACT -> Color(0xFF3B6D11)
+        ConditionStatus.DISTURBED -> Color(0xFF854F0B)
+        ConditionStatus.DESTROYED -> MaterialTheme.colorScheme.error
+        ConditionStatus.NOT_FOUND -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        point.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "${point.type.name} · ${point.orderClass.name}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(.55f)
+                    )
+                }
+                Surface(
+                    color = conditionColor.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Text(
+                        point.condition.name,
+                        Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = conditionColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                InfoPill(Icons.Outlined.LocationOn, "${point.regionName}, ${point.inkhundlaName}")
+                InfoPill(
+                    Icons.Outlined.MyLocation,
+                    "%.4f°, %.4f°".format(point.latitude, point.longitude)
+                )
+            }
+
+            if (!point.isSynced) {
+                Surface(
+                    color = Color(0xFFFAEEDA),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Schedule, null,
+                            Modifier.size(12.dp),
+                            tint = Color(0xFF633806)
+                        )
+                        Text(
+                            "Provisional — awaiting SG approval",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF633806)
+                        )
+                    }
+                }
+            }
+
+            if (showActions) {
+                HorizontalDivider()
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(
+                        onClick = { vm.approveControlPoint(point.id) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFEAF3DE),
+                            contentColor = Color(0xFF27500A)
+                        )
+                    ) {
+                        Icon(Icons.Outlined.Check, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Approve")
+                    }
+                    OutlinedButton(
+                        onClick = { vm.rejectControlPoint(point.id) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Outlined.Close, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Reject")
+                    }
+                }
+            }
+        }
+    }
+}
+
+enum class PointFilter(val label: String) {
+    PENDING("Pending"),
+    DESTROYED("Destroyed"),
+    ALL("All")
+}
+
+@Composable
+private fun UserCard(user: SurveyUser, actions: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -528,7 +738,6 @@ private fun UserCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -552,18 +761,12 @@ private fun UserCard(
                 }
                 StatusChip(user.status)
             }
-
             if (user.region.isNotBlank() || user.licenceNo.isNotBlank()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (user.region.isNotBlank()) {
-                        InfoPill(Icons.Outlined.LocationOn, user.region)
-                    }
-                    if (user.licenceNo.isNotBlank()) {
-                        InfoPill(Icons.Outlined.Badge, user.licenceNo)
-                    }
+                    if (user.region.isNotBlank()) InfoPill(Icons.Outlined.LocationOn, user.region)
+                    if (user.licenceNo.isNotBlank()) InfoPill(Icons.Outlined.Badge, user.licenceNo)
                 }
             }
-
             HorizontalDivider()
             actions()
         }
@@ -576,16 +779,16 @@ private fun InfoPill(icon: ImageVector, text: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp)
-            )
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Icon(icon, null, Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurface.copy(.5f))
         Text(
             text,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(.6f)
+            color = MaterialTheme.colorScheme.onSurface.copy(.6f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -598,9 +801,7 @@ private fun SectionLabel(title: String, count: Int) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Surface(
-            color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape
-        ) {
+        Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
             Text(
                 "$count",
                 Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -613,7 +814,10 @@ private fun SectionLabel(title: String, count: Int) {
 
 @Composable
 private fun StatCard(
-    label: String, value: String, valueColor: Color, modifier: Modifier = Modifier
+    label: String,
+    value: String,
+    valueColor: Color,
+    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier,
@@ -682,7 +886,8 @@ private fun EmptyState(text: String) {
     Box(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 32.dp), contentAlignment = Alignment.Center
+            .padding(vertical = 32.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text,
@@ -691,4 +896,3 @@ private fun EmptyState(text: String) {
         )
     }
 }
-

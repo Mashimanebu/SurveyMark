@@ -133,6 +133,17 @@ fun SurveyMarkNav(
             )
         }
 
+        composable(Routes.PENDING) {
+            PendingApprovalScreen(
+                onSignOut = {
+                    authViewModel.signOut()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.ADMIN) {
             AdminDashboardScreen(
                 onSignOut = {
