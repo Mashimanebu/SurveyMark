@@ -1,4 +1,4 @@
-package com.survey.mark.auth.ui
+package com.survey.mark.auth.ui.register
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

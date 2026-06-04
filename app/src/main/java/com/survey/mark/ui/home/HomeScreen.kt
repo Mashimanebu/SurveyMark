@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.survey.mark.auth.domain.AuthState
+import com.survey.mark.auth.ui.AuthViewModel
 import com.survey.mark.domain.model.point.ControlPoint
 import com.survey.mark.domain.model.point.ControlPointType
 import com.survey.mark.domain.model.point.formattedDistance
@@ -71,21 +74,64 @@ import com.survey.mark.ui.home.components.SearchBar
 fun HomeScreen(
     navController: NavHostController,
     onControlPointClick: (String) -> Unit,
-    vm: DirectoryViewModel = hiltViewModel()
+    vm: DirectoryViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val query by vm.query.collectAsState()
     val filter by vm.filter.collectAsState()
     val points by vm.controlPoints.collectAsState()
     val location by vm.location.collectAsState()
+    val authState by authViewModel.authState.collectAsState()
+
+
+    val user = (authState as? AuthState.Authenticated)?.user
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
+    LaunchedEffect(authState) {
+
+        when (authState) {
+
+            is AuthState.Unauthenticated -> {
+
+                navController.navigate(Routes.LOGIN) {
+                    popUpTo(0) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
     AppDrawer(
         currentRoute = Routes.DIRECTORY,
+
         drawerState = drawerState,
+
+        userName = user?.displayName ?: "",
+
+        userEmail = user?.email ?: "",
+
+        userRole = user?.role?.name ?: "",
+
         onNavigate = { route ->
+
             navController.navigate(route) {
-                popUpTo(Routes.DIRECTORY)
+                launchSingleTop = true
+            }
+        },
+
+        onSignOut = {
+
+            authViewModel.signOut()
+
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0) {
+                    inclusive = true
+                }
                 launchSingleTop = true
             }
         }

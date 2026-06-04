@@ -5,11 +5,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.*
 import com.survey.mark.auth.domain.AuthState
 import com.survey.mark.auth.domain.UserRole
-import com.survey.mark.auth.ui.AdminDashboardScreen
+import com.survey.mark.auth.ui.admin.AdminDashboardScreen
 import com.survey.mark.auth.ui.AuthViewModel
-import com.survey.mark.auth.ui.LoginScreen
-import com.survey.mark.auth.ui.PendingApprovalScreen
-import com.survey.mark.auth.ui.SignUpScreen
+import com.survey.mark.auth.ui.login.LoginScreen
+import com.survey.mark.auth.ui.register.PendingApprovalScreen
+import com.survey.mark.auth.ui.register.SignUpScreen
 import com.survey.mark.ui.detailScreen.ControlPointDetailScreen
 import com.survey.mark.ui.field.FieldNavScreen
 import com.survey.mark.ui.home.HomeScreen
@@ -85,6 +85,27 @@ fun SurveyMarkNav(
             LoginScreen(
                 onNavigateToSignUp = {
                     navController.navigate(Routes.SIGNUP)
+                },
+                onNavigateToHome = {
+                    navController.navigate(Routes.DIRECTORY) {
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onNavigateToAdmin = {
+                    navController.navigate(Routes.ADMIN) {
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onNavigateToPending = {
+                    navController.navigate(Routes.PENDING) {
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }

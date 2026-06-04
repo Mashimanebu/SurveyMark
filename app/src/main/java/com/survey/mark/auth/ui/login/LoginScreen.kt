@@ -1,4 +1,4 @@
-package com.survey.mark.auth.ui
+package com.survey.mark.auth.ui.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,17 +51,37 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.survey.mark.auth.domain.AuthState
+import com.survey.mark.auth.domain.UserRole
+import com.survey.mark.auth.ui.AuthViewModel
 
 @Composable
 fun LoginScreen(
+    onNavigateToHome    : () -> Unit,
+    onNavigateToAdmin   : () -> Unit,
+    onNavigateToPending : () -> Unit,
     onNavigateToSignUp: () -> Unit,
     vm: AuthViewModel = hiltViewModel()
 ) {
 
     val form by vm.loginForm.collectAsState()
+    val authState by vm.authState.collectAsState()
 
     var passwordVisible by remember {
         mutableStateOf(false)
+    }
+
+    LaunchedEffect(authState) {
+        when (val state = authState) {
+            is AuthState.Authenticated -> {
+                when (state.user.role) {
+                    UserRole.SURVEYOR_GENERAL-> onNavigateToAdmin()
+                    UserRole.SURVEYOR -> onNavigateToHome()
+                }
+            }
+            is AuthState.PendingApproval -> onNavigateToPending()
+            else -> { }
+        }
     }
 
     Column(

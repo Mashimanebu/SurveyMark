@@ -1,4 +1,4 @@
-package com.survey.mark.auth.ui
+package com.survey.mark.auth.ui.register
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.survey.mark.auth.ui.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

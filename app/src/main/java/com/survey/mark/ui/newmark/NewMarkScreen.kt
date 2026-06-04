@@ -327,7 +327,7 @@ fun NewMarkScreen(
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PhotoBox(
-                        label = "Monument Photo",
+                        label = "Control Mark Photo",
                         uri = form.monumentPhotoUri,
                         onCapture = {
                             if (cameraPerm.status.isGranted) {
