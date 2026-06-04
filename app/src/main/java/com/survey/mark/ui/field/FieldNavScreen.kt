@@ -1,10 +1,12 @@
 package com.survey.mark.ui.field
 
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.net.Uri
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
@@ -42,6 +44,21 @@ import com.survey.mark.ui.newmark.components.SurveyCard
 import com.survey.mark.ui.newmark.components.SurveyPrimaryButton
 import kotlin.math.cos
 import kotlin.math.sin
+
+private fun launchGoogleMaps(context: Context, lat: Double, lon: Double, label: String) {
+
+    val gmmUri = Uri.parse("google.navigation:q=$lat,$lon&mode=d")
+    val gmmIntent = Intent(Intent.ACTION_VIEW, gmmUri).apply {
+        setPackage("com.google.android.apps.maps")
+    }
+    if (gmmIntent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(gmmIntent)
+    } else {
+
+        val geoUri = Uri.parse("geo:$lat,$lon?q=$lat,$lon(${Uri.encode(label)})")
+        context.startActivity(Intent(Intent.ACTION_VIEW, geoUri))
+    }
+}
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -124,6 +141,7 @@ fun FieldNavScreen(
             .statusBarsPadding()
     ) {
 
+
         Row(
             Modifier
                 .fillMaxWidth()
@@ -140,6 +158,25 @@ fun FieldNavScreen(
                     style = MaterialTheme.typography.headlineSmall,
                     fontFamily = FontFamily.Monospace
                 )
+            }
+
+            state.targetPoint?.let { target ->
+                IconButton(
+                    onClick = {
+                        launchGoogleMaps(
+                            context = context,
+                            lat = target.latitude,
+                            lon = target.longitude,
+                            label = target.name
+                        )
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Map,
+                        contentDescription = "Open in Google Maps",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             state.userLocation?.let {
                 GpsAccuracyChip(it.accuracyMeters, Modifier.padding(end = 12.dp))
@@ -172,6 +209,7 @@ fun FieldNavScreen(
             }
         }
 
+        // ── Scrollable body ──────────────────────────────────────────────────
         Column(
             Modifier
                 .fillMaxSize()
@@ -190,6 +228,7 @@ fun FieldNavScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // ── Distance + Bearing cards ─────────────────────────────────────
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MetricCard(
                     label = "Distance",
@@ -201,11 +240,48 @@ fun FieldNavScreen(
                 MetricCard(
                     label = "Bearing",
                     value = if (state.userLocation != null)
-                        BearingCalculator.formatBearing(state.trueBearingDeg)  // true bearing
+                        BearingCalculator.formatBearing(state.trueBearingDeg)
                     else "—",
                     valueColor = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            state.targetPoint?.let { target ->
+                OutlinedButton(
+                    onClick = {
+                        launchGoogleMaps(
+                            context = context,
+                            lat = target.latitude,
+                            lon = target.longitude,
+                            label = target.name
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        )
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Map,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Open in Google Maps",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
 
             Spacer(Modifier.height(10.dp))
