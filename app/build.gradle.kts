@@ -86,6 +86,7 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.camerax.extensions)
+    implementation(libs.coil.compose.v260)
 
     implementation(libs.datastore.preferences)
     implementation(libs.timber)

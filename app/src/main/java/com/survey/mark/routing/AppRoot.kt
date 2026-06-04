@@ -164,7 +164,6 @@ fun SurveyMarkNav(
                 ?: return@composable
 
             ControlPointDetailScreen(
-                markId = markId,
                 onBack = { safeBack() },
                 onNavigateClick = { navController.navigate(Routes.fieldNav(markId)) },
                 onReportClick = { navController.navigate(Routes.report(markId)) },

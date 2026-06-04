@@ -64,7 +64,7 @@ fun ConditionReportScreen(
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        // Header
+
         Row(
             Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -85,7 +85,7 @@ fun ConditionReportScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Control point selector
+
             SurveyCard(Modifier.fillMaxWidth()) {
                 Text("Control Point", style = MaterialTheme.typography.labelSmall)
                 Spacer(Modifier.height(8.dp))

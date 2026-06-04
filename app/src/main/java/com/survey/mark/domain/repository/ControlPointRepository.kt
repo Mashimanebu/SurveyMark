@@ -34,6 +34,7 @@ class ControlPointRepository @Inject constructor(
     fun observeByCondition(condition: ConditionStatus): Flow<List<ControlPoint>> =
         dao.observeByCondition(condition).map { list -> list.map { it.toDomain() } }
 
+
     fun observeById(id: String): Flow<ControlPoint?> =
         dao.observeById(id).map { it?.toDomain() }
 

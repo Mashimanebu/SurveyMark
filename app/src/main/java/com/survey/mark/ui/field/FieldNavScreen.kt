@@ -209,7 +209,6 @@ fun FieldNavScreen(
             }
         }
 
-        // ── Scrollable body ──────────────────────────────────────────────────
         Column(
             Modifier
                 .fillMaxSize()

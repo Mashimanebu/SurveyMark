@@ -28,7 +28,7 @@ fun SyncStatusChip(
 ) {
     val (label, icon, containerColor, contentColor) = when (status) {
         SyncStatus.SYNCED -> ChipData(
-            label = "Synced",
+            label = "Approved",
             icon = Icons.Default.CloudDone,
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer

@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.survey.mark.auth.domain.AuthRepository
 import com.survey.mark.domain.model.ObservationMethod
 import com.survey.mark.domain.model.ReviewStatus
 import com.survey.mark.domain.model.location.LocationRepository
@@ -16,6 +17,7 @@ import com.survey.mark.domain.model.status.ConditionStatus
 import com.survey.mark.domain.model.status.SyncStatus
 import com.survey.mark.domain.repository.ControlPointRepository
 import com.survey.mark.domain.repository.NewMarkRepository
+
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,13 +32,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-
 @HiltViewModel
 class NewMarkViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val newMarkRepository: NewMarkRepository,
     private val controlPointRepository: ControlPointRepository,
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val authRepository: AuthRepository              // ← add this
 ) : ViewModel() {
 
     private val _form = MutableStateFlow(
@@ -48,6 +50,20 @@ class NewMarkViewModel @Inject constructor(
     val form = _form.asStateFlow()
 
     init {
+        // ── Auto-fill surveyor from logged-in user ────────────────────
+        viewModelScope.launch {
+            authRepository.getCurrentUser()?.let { user ->
+                _form.update {
+                    it.copy(
+                        surveyorName = user.displayName,
+                        licenceNo = user.licenceNo
+                    )
+                }
+                Timber.d("Pre-filled surveyor: ${user.displayName} (${user.licenceNo})")
+            }
+        }
+
+        // ── Seed location ─────────────────────────────────────────────
         viewModelScope.launch {
             locationRepository.getLastKnownLocation()?.let { last ->
                 _form.update { it.copy(userLocation = last) }
@@ -62,6 +78,8 @@ class NewMarkViewModel @Inject constructor(
         }
     }
 
+    // rest of the file unchanged ...
+
     private fun generateRefNumber(type: ControlPointType): String {
         val date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
         val suffix = (1000..9999).random()
@@ -69,11 +87,9 @@ class NewMarkViewModel @Inject constructor(
     }
 
     fun setProposedName(s: String) = _form.update { it.copy(proposedName = s) }
-
     fun setMarkType(t: ControlPointType) = _form.update {
         it.copy(markType = t, refNumber = generateRefNumber(t))
     }
-
     fun setLatitude(s: String) = _form.update { it.copy(latitudeStr = s) }
     fun setLongitude(s: String) = _form.update { it.copy(longitudeStr = s) }
     fun setHeight(s: String) = _form.update { it.copy(heightStr = s) }

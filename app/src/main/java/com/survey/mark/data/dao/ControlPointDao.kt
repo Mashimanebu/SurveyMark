@@ -55,4 +55,5 @@ interface ControlPointDao {
 
     @Delete
     suspend fun delete(entity: ControlPointEntity)
+
 }

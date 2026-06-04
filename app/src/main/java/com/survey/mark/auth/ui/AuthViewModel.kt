@@ -82,8 +82,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // ── Sign Up ───────────────────────────────────────────────────────────────
-
     fun signUp() {
         val s = _signUp.value
 

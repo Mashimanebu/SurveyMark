@@ -6,6 +6,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.survey.mark.auth.domain.AuthRepository
 import com.survey.mark.domain.model.location.LocationRepository
 import com.survey.mark.domain.model.point.ControlPoint
 import com.survey.mark.domain.model.report.ConditionReport
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -29,6 +31,7 @@ class ConditionReportViewModel @Inject constructor(
     private val cpRepo: ControlPointRepository,
     private val reportRepo: ConditionReportRepository,
     private val locationRepo: LocationRepository,
+    private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -37,14 +40,33 @@ class ConditionReportViewModel @Inject constructor(
     val form = _form.asStateFlow()
 
     init {
+
+        viewModelScope.launch {
+            authRepository.getCurrentUser()?.let { user ->
+                _form.update {
+                    it.copy(
+                        reporterName = user.displayName,
+                        reporterLicenceNo = user.licenceNo
+                    )
+                }
+                Timber.d("Pre-filled reporter: ${user.displayName} (${user.licenceNo})")
+            }
+        }
+
         viewModelScope.launch {
             cpRepo.observeAll().collect { points ->
                 val selected = if (preselectedId != null) {
                     points.firstOrNull { it.id == preselectedId }
                 } else points.firstOrNull()
-                _form.update { it.copy(allPoints = points, selectedPoint = it.selectedPoint ?: selected) }
+                _form.update {
+                    it.copy(
+                        allPoints = points,
+                        selectedPoint = it.selectedPoint ?: selected
+                    )
+                }
             }
         }
+
         viewModelScope.launch {
             locationRepo.observeLocation(highAccuracy = true).collect { loc ->
                 _form.update { it.copy(location = loc) }
@@ -63,11 +85,16 @@ class ConditionReportViewModel @Inject constructor(
     fun createPhotoFile(): Uri {
         val dir = File(context.filesDir, "beacon_photos").also { it.mkdirs() }
         val file = File(dir, "beacon_${System.currentTimeMillis()}.jpg")
-        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
     }
 
     fun submit() {
         val state = _form.value
+
         val point = state.selectedPoint ?: run {
             _form.update { it.copy(errorMessage = "Select a control point") }
             return
@@ -102,8 +129,13 @@ class ConditionReportViewModel @Inject constructor(
                 syncStatus = SyncStatus.PENDING
             )
             runCatching { reportRepo.submitReport(report) }
-                .onSuccess { _form.update { it.copy(isSubmitting = false, submitSuccess = true) } }
-                .onFailure { e -> _form.update { it.copy(isSubmitting = false, errorMessage = e.message) } }
+                .onSuccess {
+                    _form.update { it.copy(isSubmitting = false, submitSuccess = true) }
+                }
+                .onFailure { e ->
+                    Timber.e(e, "Report submission failed")
+                    _form.update { it.copy(isSubmitting = false, errorMessage = e.message) }
+                }
         }
     }
 }

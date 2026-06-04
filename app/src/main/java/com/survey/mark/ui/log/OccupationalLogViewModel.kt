@@ -3,6 +3,7 @@ package com.survey.mark.ui.log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.survey.mark.auth.domain.AuthRepository
 import com.survey.mark.domain.model.log.OccupationLog
 import com.survey.mark.domain.model.log.OccupationType
 import com.survey.mark.domain.model.point.ControlPoint
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
@@ -23,6 +25,7 @@ import javax.inject.Inject
 class OccupationLogViewModel @Inject constructor(
     private val cpRepo: ControlPointRepository,
     private val logRepo: OccupationLogRepository,
+    private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -31,6 +34,18 @@ class OccupationLogViewModel @Inject constructor(
     val form = _form.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            authRepository.getCurrentUser()?.let { user ->
+                _form.update {
+                    it.copy(
+                        surveyorName = user.displayName,
+                        licenceNo = user.licenceNo
+                    )
+                }
+                Timber.d("Pre-filled surveyor: ${user.displayName} (${user.licenceNo})")
+            }
+        }
+
         viewModelScope.launch {
             cpRepo.observeAll().collect { points ->
                 val selected =
@@ -103,14 +118,12 @@ class OccupationLogViewModel @Inject constructor(
                 syncStatus = SyncStatus.PENDING
             )
             runCatching { logRepo.saveLog(log) }
-                .onSuccess { _form.update { it.copy(isSubmitting = false, submitSuccess = true) } }
+                .onSuccess {
+                    _form.update { it.copy(isSubmitting = false, submitSuccess = true) }
+                }
                 .onFailure { e ->
-                    _form.update {
-                        it.copy(
-                            isSubmitting = false,
-                            errorMessage = e.message
-                        )
-                    }
+                    Timber.e(e, "Log submission failed")
+                    _form.update { it.copy(isSubmitting = false, errorMessage = e.message) }
                 }
         }
     }
