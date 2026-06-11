@@ -50,7 +50,6 @@ class NewMarkViewModel @Inject constructor(
     val form = _form.asStateFlow()
 
     init {
-        // ── Auto-fill surveyor from logged-in user ────────────────────
         viewModelScope.launch {
             authRepository.getCurrentUser()?.let { user ->
                 _form.update {
@@ -63,7 +62,6 @@ class NewMarkViewModel @Inject constructor(
             }
         }
 
-        // ── Seed location ─────────────────────────────────────────────
         viewModelScope.launch {
             locationRepository.getLastKnownLocation()?.let { last ->
                 _form.update { it.copy(userLocation = last) }
@@ -78,7 +76,6 @@ class NewMarkViewModel @Inject constructor(
         }
     }
 
-    // rest of the file unchanged ...
 
     private fun generateRefNumber(type: ControlPointType): String {
         val date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
@@ -179,6 +176,7 @@ class NewMarkViewModel @Inject constructor(
                     lastVerifiedDate = null,
                     condition = ConditionStatus.UNKNOWN,
                     photoUri = s.monumentPhotoUri,
+                    sketchPhotoUri = s.sketchPhotoUri,
                     isSynced = false
                 )
                 controlPointRepository.upsert(provisionalPoint)

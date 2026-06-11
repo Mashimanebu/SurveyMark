@@ -23,7 +23,8 @@ data class ControlPointDto(
     @Json(name = "established_date") val establishedDate: String?,
     @Json(name = "last_verified_date") val lastVerifiedDate: String?,
     @Json(name = "condition") val condition: String,
-    @Json(name = "photo_url") val photoUrl: String?
+    @Json(name = "photo_url") val photoUrl: String?,
+    @Json(name = "sketch_photo_url") val sketchPhotoUrl: String?
 )
 
 @JsonClass(generateAdapter = true)

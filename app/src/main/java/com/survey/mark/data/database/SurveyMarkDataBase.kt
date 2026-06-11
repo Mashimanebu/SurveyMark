@@ -3,6 +3,7 @@ package com.survey.mark.data.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.survey.mark.data.dao.ConditionReportDao
 import com.survey.mark.data.dao.ControlPointDao
@@ -23,7 +24,7 @@ import timber.log.Timber
         OccupationLogEntity::class,
         NewMarkSubmissionEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(ControlPointTypeConverters::class)
@@ -36,6 +37,12 @@ abstract class SurveyMarkDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "surveymark_eswatini.db"
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE control_points ADD COLUMN sketch_photo_uri TEXT DEFAULT NULL")
+            }
+        }
 
         fun seedCallback(scope: CoroutineScope) = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {

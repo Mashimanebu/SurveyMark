@@ -28,6 +28,7 @@ data class ControlPointEntity(
     val lastVerifiedDate: String?,
     val condition: ConditionStatus,
     val photoUri: String?,
+    val sketchPhotoUri: String?,
     val isSynced: Boolean,
     val updatedAt: LocalDateTime = LocalDateTime.now()
 )

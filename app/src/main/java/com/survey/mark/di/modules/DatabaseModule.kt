@@ -26,6 +26,7 @@ object DatabaseModule {
             SurveyMarkDatabase::class.java,
             SurveyMarkDatabase.DATABASE_NAME
         )
+            .addMigrations(SurveyMarkDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build()
 

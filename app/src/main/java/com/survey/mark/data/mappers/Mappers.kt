@@ -29,6 +29,7 @@ fun ControlPointEntity.toDomain(distanceMeters: Double? = null) = ControlPoint(
     lastVerifiedDate = lastVerifiedDate,
     condition = condition,
     photoUri = photoUri,
+    sketchPhotoUri = sketchPhotoUri,
     isSynced = isSynced,
     distanceMeters = distanceMeters
 )
@@ -53,6 +54,7 @@ fun ControlPoint.toEntity() = ControlPointEntity(
     lastVerifiedDate = lastVerifiedDate,
     condition = condition,
     photoUri = photoUri,
+    sketchPhotoUri = sketchPhotoUri,
     isSynced = isSynced
 )
 

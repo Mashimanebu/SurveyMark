@@ -108,6 +108,7 @@ class ControlPointRepository @Inject constructor(
                     lastVerifiedDate = dto.lastVerifiedDate,
                     condition        = ConditionStatus.valueOf(dto.condition),
                     photoUri         = dto.photoUrl,
+                    sketchPhotoUri   = dto.sketchPhotoUrl,
                     isSynced         = true
                 )
             }
@@ -144,6 +145,7 @@ private object EswatiniSeedData {
             lastVerifiedDate = "2024-11-12",
             condition        = ConditionStatus.INTACT,
             photoUri         = null,
+            sketchPhotoUri   = null,
             isSynced         = true
         ),
         ControlPointEntity(
@@ -166,6 +168,7 @@ private object EswatiniSeedData {
             lastVerifiedDate = "2025-01-20",
             condition        = ConditionStatus.INTACT,
             photoUri         = null,
+            sketchPhotoUri   = null,
             isSynced         = true
         ),
         ControlPointEntity(
@@ -188,6 +191,7 @@ private object EswatiniSeedData {
             lastVerifiedDate = "2024-09-03",
             condition        = ConditionStatus.INTACT,
             photoUri         = null,
+            sketchPhotoUri   = null,
             isSynced         = true
         ),
         ControlPointEntity(
@@ -210,6 +214,7 @@ private object EswatiniSeedData {
             lastVerifiedDate = "2024-07-22",
             condition        = ConditionStatus.DISTURBED,
             photoUri         = null,
+            sketchPhotoUri   = null,
             isSynced         = true
         ),
         ControlPointEntity(
@@ -232,6 +237,7 @@ private object EswatiniSeedData {
             lastVerifiedDate = "2023-06-18",
             condition        = ConditionStatus.DESTROYED,
             photoUri         = null,
+            sketchPhotoUri   = null,
             isSynced         = true
         )
     )

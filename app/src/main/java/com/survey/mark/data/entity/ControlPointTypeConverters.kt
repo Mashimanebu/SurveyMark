@@ -62,4 +62,5 @@ class ControlPointTypeConverters {
 
     @TypeConverter
     fun toReviewStatus(value: String): ReviewStatus = ReviewStatus.valueOf(value)
+
 }

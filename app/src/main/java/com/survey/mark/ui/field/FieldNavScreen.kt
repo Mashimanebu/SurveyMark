@@ -227,7 +227,7 @@ fun FieldNavScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Distance + Bearing cards ─────────────────────────────────────
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MetricCard(
                     label = "Distance",

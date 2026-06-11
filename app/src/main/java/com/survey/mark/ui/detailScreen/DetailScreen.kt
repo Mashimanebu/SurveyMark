@@ -108,7 +108,7 @@ private fun DetailContent(
     onLogClick: () -> Unit,
     onBack: () -> Unit
 ) {
-    // null  = viewer closed; non-null = URI to show fullscreen
+
     var fullscreenUri by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -228,7 +228,61 @@ private fun DetailContent(
                 }
             }
 
-            // ── Action buttons ────────────────────────────────────────
+            val hasPhotos = !point.photoUri.isNullOrBlank() || !point.sketchPhotoUri.isNullOrBlank()
+            if (hasPhotos) {
+                SurveyCard(Modifier.fillMaxWidth()) {
+                    Text(
+                        "Mark Photos",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        point.photoUri?.let { uri ->
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "Monument",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                ReportPhotoThumb(
+                                    uri = uri,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { fullscreenUri = uri }
+                                )
+                            }
+                        }
+                        point.sketchPhotoUri?.let { uri ->
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "Sketch",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                ReportPhotoThumb(
+                                    uri = uri,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { fullscreenUri = uri }
+                                )
+                            }
+                        }
+
+                        if (point.photoUri != null && point.sketchPhotoUri == null ||
+                            point.photoUri == null && point.sketchPhotoUri != null
+                        ) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onNavigateClick,
@@ -290,7 +344,7 @@ private fun DetailContent(
                 )
             }
 
-            // ── Recent condition reports ───────────────────────────────
+
             if (recentReports.isNotEmpty()) {
                 SectionLabel("Recent Condition Reports")
                 recentReports.forEach { report ->
@@ -299,7 +353,7 @@ private fun DetailContent(
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
                     ) {
-                        // Header: badge + date
+
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -452,7 +506,6 @@ private fun PhotoFullscreenViewer(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
                 )
-                // Close button
                 IconButton(
                     onClick = onDismiss,
                     modifier = Modifier

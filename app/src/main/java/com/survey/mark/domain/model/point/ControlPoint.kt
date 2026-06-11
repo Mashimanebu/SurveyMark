@@ -22,7 +22,8 @@ data class ControlPoint(
     val establishedDate: String?,
     val lastVerifiedDate: String?,
     val condition: ConditionStatus,
-    val photoUri: String?,
+    val photoUri: String? = null,
+    val sketchPhotoUri: String? = null,
     val isSynced: Boolean,
     val distanceMeters: Double? = null
 )
